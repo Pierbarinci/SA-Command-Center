@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salas Aviation — Operations Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:       #0b0f17;
+  --surface:  #111827;
+  --card:     #161d2e;
+  --border:   #1e2d42;
+  --gold:     #c9973a;
+  --gold-lt:  #e8b84e;
+  --gold-dim: rgba(201,151,58,0.15);
+  --sky:      #3a7fc1;
+  --sky-lt:   #5a9fd4;
+  --sky-dim:  rgba(58,127,193,0.15);
+  --green:    #2a9d6f;
+  --red:      #c94a3a;
+  --text:     #e8edf4;
+  --muted:    #6b7e94;
+  --dim:      #3a4a5c;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+}
+
+/* ── BANNER ─────────────────────────────────────────── */
+.banner {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.banner-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.banner-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(201,151,58,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.banner-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: var(--gold-lt);
+  line-height: 1;
+}
+
+.banner-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.banner-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.banner-year {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 5px 14px;
+}
+
+.banner-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+.dash {
+  padding: 24px 28px 40px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.row { display: flex; gap: 16px; margin-bottom: 16px; }
+.row.three > * { flex: 1; }
+.row.two   > * { flex: 1; }
+.row.full  > * { flex: 1; }
+
+/* ── CARD ───────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.5s ease both;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.card.gold-accent::before  { background: linear-gradient(90deg, var(--gold), transparent); }
+.card.sky-accent::before   { background: linear-gradient(90deg, var(--sky), transparent); }
+.card.green-accent::before { background: linear-gradient(90deg, var(--green), transparent); }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── KPI CARD ───────────────────────────────────────── */
+.kpi-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.kpi-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 46px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kpi-val.gold  { color: var(--gold-lt); }
+.kpi-val.sky   { color: var(--sky-lt); }
+.kpi-val.green { color: #4ecb9e; }
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpi-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 2px;
+}
+
+.kpi-badge.up   { background: rgba(42,157,111,0.15); color: #4ecb9e; }
+.kpi-badge.down { background: rgba(201,74,58,0.15);  color: #e87060; }
+
+.kpi-sparkline {
+  position: absolute;
+  bottom: 0; right: 0;
+  opacity: 0.12;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 80px;
+  line-height: 1;
+  color: var(--gold);
+  pointer-events: none;
+}
+
+/* ── CHART CARD ─────────────────────────────────────── */
+.chart-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.chart-heading {
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.legend {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.chart-wrap {
+  position: relative;
+}
+
+/* ── MAP SECTION ────────────────────────────────────── */
+.map-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 20px 22px;
+  animation: fadeUp 0.5s 0.3s ease both;
+}
+
+.map-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--sky), transparent);
+}
+
+#leafletMap {
+  width: 100%;
+  height: 320px;
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* ── ROUTE BAR ──────────────────────────────────────── */
+.route-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.route-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  width: 90px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.route-bar-wrap {
+  flex: 1;
+  height: 20px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 1px;
+  overflow: hidden;
+  position: relative;
+}
+
+.route-bar {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.route-bar::after {
+  content: attr(data-val);
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: rgba(0,0,0,0.7);
+  font-weight: 500;
+}
+
+.route-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* section divider */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  margin-top: 8px;
+}
+
+.section-divider span {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+</style>
+</head>
+<body>
+
+<!-- BANNER -->
+<div class="banner">
+  <div class="banner-left">
+    <div class="banner-icon">✈</div>
+    <div>
+      <div class="banner-name">Salas Aviation</div>
+      <div class="banner-sub">Operations Dashboard</div>
+    </div>
+  </div>
+  <div class="banner-right">
+    <div class="banner-year">FY 2025 · YTD through Jun</div>
+    <div class="banner-dot"></div>
+  </div>
+</div>
+
+<div class="dash">
+
+  <!-- ── ROW 1: KPI CARDS ──────────────────────────── -->
+  <div class="section-divider"><span>Key Performance Indicators</span></div>
+  <div class="row three" style="animation-delay:0s">
+
+    <div class="card gold-accent" style="animation-delay:0.05s">
+      <div class="kpi-label">Sales Volume YTD</div>
+      <div class="kpi-val gold">$4.82M</div>
+      <div class="kpi-sub">
+        vs $3.41M prior year
+        <span class="kpi-badge up">+41%</span>
+      </div>
+      <div class="kpi-sparkline">$</div>
+    </div>
+
+    <div class="card sky-accent" style="animation-delay:0.1s">
+      <div class="kpi-label">Fee Volume YTD</div>
+      <div class="kpi-val sky">$482K</div>
+      <div class="kpi-sub">
+        vs $341K prior year
+        <span class="kpi-badge up">+41%</span>
+      </div>
+      <div class="kpi-sparkline" style="color:var(--sky)">%</div>
+    </div>
+
+    <div class="card green-accent" style="animation-delay:0.15s">
+      <div class="kpi-label">Fee Percentage</div>
+      <div class="kpi-val green">10.0%</div>
+      <div class="kpi-sub">
+        Fee Volume ÷ Sales Volume
+        <span class="kpi-badge up">On target</span>
+      </div>
+      <div class="kpi-sparkline" style="color:var(--green)">f</div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 2: VOLUME CHARTS ──────────────────────── -->
+  <div class="section-divider"><span>Volume Analysis</span></div>
+  <div class="row two">
+
+    <div class="card sky-accent" style="animation-delay:0.2s">
+      <div class="chart-title">Sales Performance</div>
+      <div class="chart-heading">
+        Monthly Sales Volume — CY vs PY
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--sky-lt)"></div>2025</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--dim)"></div>2024</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Full Year</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="salesChart" height="200"></canvas></div>
+    </div>
+
+    <div class="card gold-accent" style="animation-delay:0.25s">
+      <div class="chart-title">Fee Performance</div>
+      <div class="chart-heading">
+        Monthly Fee Volume — CY vs PY
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold-lt)"></div>2025</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--dim)"></div>2024</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Full Year</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="feeChart" height="200"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 3: FLIGHT CHARTS ──────────────────────── -->
+  <div class="section-divider"><span>Flight Activity</span></div>
+  <div class="row two">
+
+    <div class="card sky-accent" style="animation-delay:0.3s">
+      <div class="chart-title">Flight Operations</div>
+      <div class="chart-heading">
+        Monthly Flights — CY vs PY
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--sky-lt)"></div>2025</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--dim)"></div>2024</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Full Year</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="flightsChart" height="200"></canvas></div>
+    </div>
+
+    <div class="card gold-accent" style="animation-delay:0.35s">
+      <div class="chart-title">Fleet Utilization</div>
+      <div class="chart-heading">Most Used Aircraft — Flights YTD</div>
+      <div class="chart-wrap"><canvas id="aircraftChart" height="200"></canvas></div>
+    </div>
+
+  </div>
+
+  <div class="row two">
+
+    <div class="card sky-accent" style="animation-delay:0.38s">
+      <div class="chart-title">Hours Flown</div>
+      <div class="chart-heading">
+        Monthly Hours Flown — CY vs PY
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--sky-lt)"></div>2025</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--dim)"></div>2024</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Full Year</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="hoursChart" height="200"></canvas></div>
+    </div>
+
+    <div class="card gold-accent" style="animation-delay:0.42s">
+      <div class="chart-title">Fleet Hours</div>
+      <div class="chart-heading">Hours Flown per Aircraft — YTD</div>
+      <div class="chart-wrap"><canvas id="hoursPerPlaneChart" height="200"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 5: ROUTE RANKINGS ─────────────────────── -->
+  <div class="section-divider"><span>Route Rankings</span></div>
+  <div class="row full">
+    <div class="card gold-accent" style="animation-delay:0.45s">
+      <div class="chart-title">Route Performance</div>
+      <div class="chart-heading">Top Routes by Flights Sold — YTD 2025</div>
+      <div id="routeChart" style="padding: 4px 0">
+
+        <div class="route-item">
+          <div class="route-label">MIA → NAS</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="38" style="width:100%; background:linear-gradient(90deg,#c9973a,#e8b84e)"></div>
+          </div>
+          <div class="route-count">38</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → CCS</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="32" style="width:84%; background:linear-gradient(90deg,#c9973a,#e8b84e)"></div>
+          </div>
+          <div class="route-count">32</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → TPA</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="28" style="width:74%; background:linear-gradient(90deg,#c9973a,#e8b84e)"></div>
+          </div>
+          <div class="route-count">28</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → CUN</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="24" style="width:63%; background:linear-gradient(90deg,#b8862a,#d4a440)"></div>
+          </div>
+          <div class="route-count">24</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → JFK</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="22" style="width:58%; background:linear-gradient(90deg,#b8862a,#d4a440)"></div>
+          </div>
+          <div class="route-count">22</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → BOG</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="18" style="width:47%; background:linear-gradient(90deg,#3a7fc1,#5a9fd4)"></div>
+          </div>
+          <div class="route-count">18</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → LHR</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="14" style="width:37%; background:linear-gradient(90deg,#3a7fc1,#5a9fd4)"></div>
+          </div>
+          <div class="route-count">14</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → LAX</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="11" style="width:29%; background:linear-gradient(90deg,#3a7fc1,#5a9fd4)"></div>
+          </div>
+          <div class="route-count">11</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → GRU</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="9" style="width:24%; background:linear-gradient(90deg,#3a7fc1,#5a9fd4)"></div>
+          </div>
+          <div class="route-count">9</div>
+        </div>
+
+        <div class="route-item">
+          <div class="route-label">MIA → DXB</div>
+          <div class="route-bar-wrap">
+            <div class="route-bar" data-val="4" style="width:11%; background:linear-gradient(90deg,#3a7fc1,#5a9fd4)"></div>
+          </div>
+          <div class="route-count">4</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /dash -->
+
+<script>
+// ── CHART DEFAULTS ───────────────────────────────────────────
+Chart.defaults.color = '#6b7e94';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 9;
+
+const gridOpts = {
+  color: 'rgba(30,45,66,0.8)',
+  drawBorder: false
+};
+
+const tickOpts = {
+  color: '#6b7e94',
+  maxRotation: 0
+};
+
+// ── LIVE DATA FROM GOOGLE SHEETS ─────────────────────────────
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbz8DfudHauz53BacVTE7CwuRGA3TYE0yh3lNR4nhxZFnWB-urPk9tX2fKF1-kwwrLbiFw/exec";
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CY = new Date().getFullYear();
+const PY = CY - 1;
+
+// Chart instances — stored so we can update them after data loads
+let salesChartInst, feeChartInst, flightsChartInst, aircraftChartInst, hoursChartInst, hoursPerPlaneChartInst;
+
+const BAR_OPTS = () => ({
+  responsive: true,
+  maintainAspectRatio: true,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#161d2e',
+      borderColor: '#1e2d42',
+      borderWidth: 1,
+      titleColor: '#e8edf4',
+      bodyColor: '#6b7e94',
+      padding: 10,
+      callbacks: {
+        label: ctx => ctx.raw !== null && ctx.raw !== undefined ? ` ${ctx.dataset.label}: ${ctx.raw.toLocaleString()}` : null
+      }
+    }
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: '#6b7e94', maxRotation: 0, font: { size: 9 } },
+      border: { color: '#1e2d42' }
+    },
+    y: {
+      grid: { color: 'rgba(30,45,66,0.8)', drawBorder: false },
+      ticks: { color: '#6b7e94', font: { size: 9 } },
+      border: { display: false }
+    }
+  },
+  animation: { duration: 1000, easing: 'easeInOutQuart' }
+});
+
+// ── HELPERS ──────────────────────────────────────────────────
+function parseDate(val) {
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d) ? null : d;
+}
+
+function fmt$(val) {
+  if (val >= 1000000) return '$' + (val/1000000).toFixed(2) + 'M';
+  if (val >= 1000)    return '$' + (val/1000).toFixed(0) + 'K';
+  return '$' + val.toFixed(0);
+}
+
+function buildLabels(maxMonthCY, maxMonthPY) {
+  const lastMonth = Math.max(maxMonthCY, maxMonthPY);
+  const mLabels = MONTHS.slice(0, lastMonth);
+  return [...mLabels, '', 'Full Yr'];
+}
+
+function monthArray(n) { return new Array(n).fill(null); }
+
+// ── INIT EMPTY CHARTS ────────────────────────────────────────
+function initCharts() {
+  const emptyLabels = [...MONTHS, '', 'Full Yr'];
+
+  salesChartInst = new Chart(document.getElementById('salesChart'), {
+    type: 'bar',
+    data: { labels: emptyLabels, datasets: [
+      { label: String(CY), data: [], backgroundColor: 'rgba(90,159,212,0.75)', borderRadius: 2 },
+      { label: String(PY), data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 },
+      { label: 'FY ' + CY, data: [], backgroundColor: 'rgba(201,151,58,0.85)', borderRadius: 2 },
+      { label: 'FY ' + PY, data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 }
+    ]},
+    options: { ...BAR_OPTS(), scales: { ...BAR_OPTS().scales,
+      y: { ...BAR_OPTS().scales.y, ticks: { ...BAR_OPTS().scales.y.ticks, callback: v => v ? '$'+v.toLocaleString() : '' }}}}
+  });
+
+  feeChartInst = new Chart(document.getElementById('feeChart'), {
+    type: 'bar',
+    data: { labels: emptyLabels, datasets: [
+      { label: String(CY), data: [], backgroundColor: 'rgba(201,151,58,0.8)',  borderRadius: 2 },
+      { label: String(PY), data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 },
+      { label: 'FY ' + CY, data: [], backgroundColor: 'rgba(201,151,58,0.9)',  borderRadius: 2 },
+      { label: 'FY ' + PY, data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 }
+    ]},
+    options: { ...BAR_OPTS(), scales: { ...BAR_OPTS().scales,
+      y: { ...BAR_OPTS().scales.y, ticks: { ...BAR_OPTS().scales.y.ticks, callback: v => v ? '$'+v.toLocaleString() : '' }}}}
+  });
+
+  flightsChartInst = new Chart(document.getElementById('flightsChart'), {
+    type: 'bar',
+    data: { labels: emptyLabels, datasets: [
+      { label: String(CY), data: [], backgroundColor: 'rgba(90,159,212,0.75)', borderRadius: 2 },
+      { label: String(PY), data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 },
+      { label: 'FY ' + CY, data: [], backgroundColor: 'rgba(201,151,58,0.85)', borderRadius: 2 },
+      { label: 'FY ' + PY, data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 }
+    ]},
+    options: BAR_OPTS()
+  });
+
+  hoursChartInst = new Chart(document.getElementById('hoursChart'), {
+    type: 'bar',
+    data: { labels: emptyLabels, datasets: [
+      { label: String(CY), data: [], backgroundColor: 'rgba(90,159,212,0.75)', borderRadius: 2 },
+      { label: String(PY), data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 },
+      { label: 'FY ' + CY, data: [], backgroundColor: 'rgba(201,151,58,0.85)', borderRadius: 2 },
+      { label: 'FY ' + PY, data: [], backgroundColor: 'rgba(58,74,92,0.8)',    borderRadius: 2 }
+    ]},
+    options: { ...BAR_OPTS(), scales: { ...BAR_OPTS().scales,
+      y: { ...BAR_OPTS().scales.y, ticks: { ...BAR_OPTS().scales.y.ticks, callback: v => v ? v+'h' : '' }}}}
+  });
+
+  aircraftChartInst = new Chart(document.getElementById('aircraftChart'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Flights YTD', data: [],
+      backgroundColor: ['rgba(201,151,58,0.85)','rgba(201,151,58,0.75)','rgba(201,151,58,0.65)',
+        'rgba(58,127,193,0.75)','rgba(58,127,193,0.65)','rgba(58,127,193,0.5)'],
+      borderRadius: 2 }]},
+    options: { ...BAR_OPTS(), plugins: { ...BAR_OPTS().plugins, tooltip: {
+      ...BAR_OPTS().plugins.tooltip, callbacks: { label: ctx => ` ${ctx.raw} flights` }}}}
+  });
+
+  hoursPerPlaneChartInst = new Chart(document.getElementById('hoursPerPlaneChart'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Hours YTD', data: [],
+      backgroundColor: ['rgba(201,151,58,0.85)','rgba(201,151,58,0.75)','rgba(201,151,58,0.65)',
+        'rgba(58,127,193,0.75)','rgba(58,127,193,0.65)','rgba(58,127,193,0.5)'],
+      borderRadius: 2 }]},
+    options: { ...BAR_OPTS(), scales: { ...BAR_OPTS().scales,
+      x: { ...BAR_OPTS().scales.x, ticks: { color: '#6b7e94', maxRotation: 30, font: { size: 8 }}},
+      y: { ...BAR_OPTS().scales.y, ticks: { ...BAR_OPTS().scales.y.ticks, callback: v => v ? v+'h' : '' }}},
+      plugins: { ...BAR_OPTS().plugins, tooltip: {
+        ...BAR_OPTS().plugins.tooltip, callbacks: { label: ctx => ` ${ctx.raw}h flown` }}}}
+  });
+}
+
+// ── PROCESS DATA ─────────────────────────────────────────────
+function processData(rows) {
+  // Monthly buckets
+  const salesMoCY   = new Array(12).fill(0);
+  const salesMoPY   = new Array(12).fill(0);
+  const feeMoCY     = new Array(12).fill(0);
+  const feeMoPY     = new Array(12).fill(0);
+  const flightsMoCY = new Array(12).fill(0);
+  const flightsMoPY = new Array(12).fill(0);
+  const hoursMoCY   = new Array(12).fill(0);
+  const hoursMoPY   = new Array(12).fill(0);
+
+  // Totals
+  let salesTotalCY = 0, salesTotalPY = 0;
+  let feeTotalCY   = 0, feeTotalPY   = 0;
+  let flightsTotalCY = 0, flightsTotalPY = 0;
+  let hoursTotalCY = 0,  hoursTotalPY = 0;
+
+  // Aggregations
+  const aircraftFlights = {};
+  const aircraftHours   = {};
+  const routeFlights    = {};
+
+  let maxMonthCY = 0, maxMonthPY = 0;
+
+  rows.forEach(row => {
+    const status = (row['Flight Status'] || '').toString().trim().toLowerCase();
+    if (status === 'cancelled' || status === 'canceled') return;
+
+    const dateVal = row['Departure Date'] || row['Invoice Date'];
+    const d = parseDate(dateVal);
+    if (!d) return;
+
+    const yr  = d.getFullYear();
+    const mo  = d.getMonth(); // 0-indexed
+
+    const cost     = parseFloat((row[' Flight Cost '] || row['Flight Cost'] || '0').toString().replace(/[$,]/g,'')) || 0;
+    const comm     = parseFloat((row['Commission $'] || '0').toString().replace(/[$,]/g,'')) || 0;
+    const hrs      = parseFloat((row['Flight Hours'] || '0').toString().replace(/[,]/g,'')) || 0;
+    const aircraft = (row['Aircraft'] || 'Unknown').toString().trim();
+    const from     = (row['From'] || '').toString().trim().toUpperCase();
+    const to       = (row['To'] || '').toString().trim().toUpperCase();
+    const route    = from && to ? from + ' → ' + to : null;
+
+    if (yr === CY) {
+      salesMoCY[mo]   += cost;
+      feeMoCY[mo]     += comm;
+      flightsMoCY[mo] += 1;
+      hoursMoCY[mo]   += hrs;
+      salesTotalCY    += cost;
+      feeTotalCY      += comm;
+      flightsTotalCY  += 1;
+      hoursTotalCY    += hrs;
+      if (mo > maxMonthCY) maxMonthCY = mo;
+
+      // Aircraft
+      if (!aircraftFlights[aircraft]) { aircraftFlights[aircraft] = 0; aircraftHours[aircraft] = 0; }
+      aircraftFlights[aircraft] += 1;
+      aircraftHours[aircraft]   += hrs;
+
+      // Routes
+      if (route) {
+        if (!routeFlights[route]) routeFlights[route] = 0;
+        routeFlights[route] += 1;
+      }
+    } else if (yr === PY) {
+      salesMoPY[mo]   += cost;
+      feeMoPY[mo]     += comm;
+      flightsMoPY[mo] += 1;
+      hoursMoPY[mo]   += hrs;
+      salesTotalPY    += cost;
+      feeTotalPY      += comm;
+      flightsTotalPY  += 1;
+      hoursTotalPY    += hrs;
+      if (mo > maxMonthPY) maxMonthPY = mo;
+    }
+  });
+
+  const lastMo = Math.max(maxMonthCY, maxMonthPY) + 1; // +1 to include the last month
+  const mLabels = [...MONTHS.slice(0, lastMo), '', 'Full Yr'];
+
+  // Build chart arrays (month data + spacer null + full year total)
+  function buildArr(monthly, total, n) {
+    const arr = monthly.slice(0, n).map(v => v > 0 ? Math.round(v) : null);
+    return [...arr, null, Math.round(total) || null];
+  }
+
+  // ── UPDATE CHARTS ─────────────────────────────────────────
+  function updateChart(chart, labels, datasets) {
+    chart.data.labels = labels;
+    datasets.forEach((d, i) => { chart.data.datasets[i].data = d; });
+    chart.update();
+  }
+
+  updateChart(salesChartInst, mLabels, [
+    buildArr(salesMoCY,  salesTotalCY, lastMo),
+    buildArr(salesMoPY,  salesTotalPY, lastMo),
+    [...new Array(lastMo).fill(null), null, Math.round(salesTotalCY) || null],
+    [...new Array(lastMo).fill(null), null, Math.round(salesTotalPY) || null]
+  ]);
+
+  updateChart(feeChartInst, mLabels, [
+    buildArr(feeMoCY,  feeTotalCY, lastMo),
+    buildArr(feeMoPY,  feeTotalPY, lastMo),
+    [...new Array(lastMo).fill(null), null, Math.round(feeTotalCY) || null],
+    [...new Array(lastMo).fill(null), null, Math.round(feeTotalPY) || null]
+  ]);
+
+  updateChart(flightsChartInst, mLabels, [
+    buildArr(flightsMoCY, flightsTotalCY, lastMo),
+    buildArr(flightsMoPY, flightsTotalPY, lastMo),
+    [...new Array(lastMo).fill(null), null, flightsTotalCY || null],
+    [...new Array(lastMo).fill(null), null, flightsTotalPY || null]
+  ]);
+
+  updateChart(hoursChartInst, mLabels, [
+    buildArr(hoursMoCY, hoursTotalCY, lastMo),
+    buildArr(hoursMoPY, hoursTotalPY, lastMo),
+    [...new Array(lastMo).fill(null), null, Math.round(hoursTotalCY*10)/10 || null],
+    [...new Array(lastMo).fill(null), null, Math.round(hoursTotalPY*10)/10 || null]
+  ]);
+
+  // Aircraft charts — sorted by flights desc
+  const acSorted = Object.keys(aircraftFlights).sort((a,b) => aircraftFlights[b] - aircraftFlights[a]).slice(0,8);
+  aircraftChartInst.data.labels = acSorted;
+  aircraftChartInst.data.datasets[0].data = acSorted.map(a => aircraftFlights[a]);
+  aircraftChartInst.update();
+
+  hoursPerPlaneChartInst.data.labels = acSorted;
+  hoursPerPlaneChartInst.data.datasets[0].data = acSorted.map(a => Math.round(aircraftHours[a]*10)/10);
+  hoursPerPlaneChartInst.update();
+
+  // ── UPDATE KPI CARDS ───────────────────────────────────────
+  const feeP = salesTotalCY > 0 ? (feeTotalCY / salesTotalCY * 100).toFixed(1) : '0.0';
+  const salesChg = salesTotalPY > 0 ? ((salesTotalCY - salesTotalPY)/salesTotalPY*100).toFixed(0) : null;
+  const feeChg   = feeTotalPY   > 0 ? ((feeTotalCY   - feeTotalPY)  /feeTotalPY  *100).toFixed(0) : null;
+
+  document.querySelector('.kpi-val.gold').textContent = fmt$(salesTotalCY);
+  document.querySelector('.kpi-val.sky').textContent  = fmt$(feeTotalCY);
+  document.querySelector('.kpi-val.green').textContent = feeP + '%';
+
+  if (salesChg !== null) {
+    const badge = document.querySelector('.kpi-val.gold').nextElementSibling.querySelector('.kpi-badge');
+    if (badge) { badge.textContent = (salesChg >= 0 ? '+' : '') + salesChg + '%'; badge.className = 'kpi-badge ' + (salesChg >= 0 ? 'up' : 'down'); }
+    document.querySelector('.kpi-val.gold').nextElementSibling.childNodes[0].textContent = 'vs ' + fmt$(salesTotalPY) + ' prior year ';
+  }
+  if (feeChg !== null) {
+    const badge2 = document.querySelector('.kpi-val.sky').nextElementSibling.querySelector('.kpi-badge');
+    if (badge2) { badge2.textContent = (feeChg >= 0 ? '+' : '') + feeChg + '%'; badge2.className = 'kpi-badge ' + (feeChg >= 0 ? 'up' : 'down'); }
+    document.querySelector('.kpi-val.sky').nextElementSibling.childNodes[0].textContent = 'vs ' + fmt$(feeTotalPY) + ' prior year ';
+  }
+
+  // ── UPDATE BANNER YEAR ─────────────────────────────────────
+  const lastMonthName = MONTHS[maxMonthCY] || '';
+  document.querySelector('.banner-year').textContent = 'FY ' + CY + ' · YTD through ' + lastMonthName;
+
+  // ── UPDATE ROUTE RANKINGS ──────────────────────────────────
+  const routeSorted = Object.keys(routeFlights).sort((a,b) => routeFlights[b] - routeFlights[a]).slice(0,12);
+  const maxRouteFlights = routeSorted.length > 0 ? routeFlights[routeSorted[0]] : 1;
+  const routeEl = document.getElementById('routeChart');
+  routeEl.innerHTML = routeSorted.map(route => {
+    const cnt = routeFlights[route];
+    const pct = Math.round(cnt / maxRouteFlights * 100);
+    const isIntl = !['MIA','TPA','JFK','LAX','ORD','ATL','DFW','BOS','MIA','FLL','MCO','PBI'].some(d => route.includes(d) && route.split('→').every(p => ['MIA','TPA','JFK','LAX','ORD','ATL','DFW','BOS','FLL','MCO','PBI','EYW','SJU'].includes(p.trim())));
+    const color = pct === 100 ? 'linear-gradient(90deg,#c9973a,#e8b84e)' : pct > 60 ? 'linear-gradient(90deg,#b8862a,#d4a440)' : 'linear-gradient(90deg,#3a7fc1,#5a9fd4)';
+    return \`<div class="route-item">
+      <div class="route-label">\${route}</div>
+      <div class="route-bar-wrap"><div class="route-bar" data-val="\${cnt}" style="width:\${pct}%;background:\${color}"></div></div>
+      <div class="route-count">\${cnt}</div>
+    </div>\`;
+  }).join('');
+}
+
+// ── FETCH & LOAD ─────────────────────────────────────────────
+function showLoading() {
+  document.querySelector('.kpi-val.gold').textContent  = '...';
+  document.querySelector('.kpi-val.sky').textContent   = '...';
+  document.querySelector('.kpi-val.green').textContent = '...';
+}
+
+function showError(msg) {
+  document.querySelector('.kpi-val.gold').textContent  = 'Error';
+  document.querySelector('.kpi-val.sky').textContent   = 'Error';
+  document.querySelector('.kpi-val.green').textContent = msg;
+}
+
+async function loadData() {
+  showLoading();
+  try {
+    const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    if (!Array.isArray(rows)) throw new Error('Invalid data format');
+    processData(rows);
+  } catch(err) {
+    console.error('Dashboard data error:', err);
+    showError('Load failed');
+  }
+}
+
+// ── BOOT ─────────────────────────────────────────────────────
+initCharts();
+loadData();
+
+// Auto-refresh every 5 minutes
+setInterval(loadData, 5 * 60 * 1000);
+
+</script>
+</body>
+</html>
